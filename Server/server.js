@@ -152,10 +152,10 @@ app.post("/refresh", async (req, res) => {
 });
 
 // ================== SERVER START ==================
-if(process.env.NODE_ENV !== "production"){
+// if(process.env.NODE_ENV !== "production"){
   server.listen(process.env.PORT, () => {
     console.log(`server started at port ${process.env.PORT}`);
   });
-}
+// }
 // for vercel
 export default server;
