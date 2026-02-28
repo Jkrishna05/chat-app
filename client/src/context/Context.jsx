@@ -9,60 +9,73 @@ const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 // Axios global setup
 axios.defaults.baseURL = backendUrl;
-axios.defaults.withCredentials = true; // send cookies automatically
+axios.defaults.withCredentials = true;
+
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve();
+    }
+  });
+
+  failedQueue = [];
+};
 
 const Context = ({ children }) => {
   const [authUser, setAuthUser] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [socket, setSocket] = useState(null);
 
-  // ✅ Check authentication on mount
+ 
+  // 🔐 CHECK AUTH
+
   const checkAuthentication = async () => {
     try {
       const { data } = await axios.get("/user/checkAuth");
       if (data.success) {
         setAuthUser(data.user);
-        connectSocket(data.user); // only connect after login
+        connectSocket();
       }
     } catch (error) {
       if (error.response?.status === 401) {
-        // not logged in yet → silent
         setAuthUser(null);
-      } else if (
-        error.response?.data?.message?.toLowerCase().includes("expired")
-      ) {
-        logout();
-        toast.error("Session expired. Please login again.");
       } else {
         console.error(error);
       }
     }
   };
 
-  // ✅ Connect socket
-  const connectSocket = (userData) => {
-    // Close any previous socket
+  
+  // CONNECT SOCKET (JWT Based)
+ 
+  const connectSocket = () => {
     if (socket) socket.disconnect();
 
     const newSocket = io(backendUrl, {
-      query: { userId: userData._id },
-      withCredentials: true,
+      withCredentials: true, // JWT cookie will authenticate
     });
+
     setSocket(newSocket);
 
-    // Listen online users
     newSocket.on("getOnlineUsers", (users) => {
       setOnlineUsers(users);
     });
   };
 
-  // ✅ Login (state = "loginUser" or "signupUser")
+  // LOGIN / SIGNUP
+  
   const login = async (state, credentials) => {
     try {
       const res = await axios.post(`/user/${state}`, credentials);
+
       if (res.data.success) {
         setAuthUser(res.data.user);
-        connectSocket(res.data.user);
+        connectSocket();
         toast.success(res.data.message);
       } else {
         toast.error(res.data.message);
@@ -72,7 +85,9 @@ const Context = ({ children }) => {
     }
   };
 
-  // ✅ Update Profile
+ 
+  //  UPDATE PROFILE
+  
   const updateProfile = async (profileData) => {
     try {
       const { data } = await axios.put("/user/updateProfile", profileData);
@@ -85,23 +100,82 @@ const Context = ({ children }) => {
     }
   };
 
-  // ✅ Logout
+  
+  //  LOGOUT
+  
   const logout = async () => {
     try {
       await axios.post("/user/logout", {});
-      setAuthUser(null);
-      setOnlineUsers([]);
-      if (socket) socket.disconnect();
-      toast.success("Logged out successfully");
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      console.error(error);
     }
+
+    setAuthUser(null);
+    setOnlineUsers([]);
+
+    if (socket) socket.disconnect();
+
+    toast.success("Logged out successfully");
   };
 
-  // ✅ Run auth check once on mount
+  
+  //  AXIOS AUTO REFRESH INTERCEPTOR
+ 
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        const originalRequest = error.config;
+
+        if (
+          error.response?.status === 401 &&
+          !originalRequest._retry
+        ) {
+          if (isRefreshing) {
+            return new Promise((resolve, reject) => {
+              failedQueue.push({ resolve, reject });
+            })
+              .then(() => axios(originalRequest))
+              .catch((err) => Promise.reject(err));
+          }
+
+          originalRequest._retry = true;
+          isRefreshing = true;
+
+          try {
+            const res = await axios.post("/refresh");
+
+            if (res.data.success) {
+              processQueue(null);
+              return axios(originalRequest);
+            } else {
+              processQueue(error);
+              logout();
+              return Promise.reject(error);
+            }
+          } catch (err) {
+            processQueue(err);
+            logout();
+            return Promise.reject(err);
+          } finally {
+            isRefreshing = false;
+          }
+        }
+
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
+  }, []);
+
+  
+  // RUN AUTH CHECK ON LOAD
+  
   useEffect(() => {
     checkAuthentication();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const value = {
@@ -114,7 +188,9 @@ const Context = ({ children }) => {
   };
 
   return (
-    <ChatContext.Provider value={value}>{children}</ChatContext.Provider>
+    <ChatContext.Provider value={value}>
+      {children}
+    </ChatContext.Provider>
   );
 };
 

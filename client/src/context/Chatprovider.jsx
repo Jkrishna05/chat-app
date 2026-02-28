@@ -89,7 +89,6 @@ const Chatprovider = ({ children }) => {
     setUnseenmsg,
     fetchUsers,
   };
-
   return (
     <ChatData.Provider value={chatvalues}>
       {children}

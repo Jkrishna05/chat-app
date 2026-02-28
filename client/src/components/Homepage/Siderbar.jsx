@@ -21,8 +21,8 @@ const Siderbar = () => {
   // ✅ safe filtering
   const filtereduser = search
     ? users.filter((user) =>
-        user.fullname?.toLowerCase().includes(search.toLowerCase())
-      )
+      user.fullname?.toLowerCase().includes(search.toLowerCase())
+    )
     : users;
 
   useEffect(() => {
@@ -31,9 +31,8 @@ const Siderbar = () => {
 
   return (
     <div
-      className={`bg-[#8d90af17] h-full  px-[0px] rounded-2xl overflow-y-scroll text-amber-50 relative ${
-        selecteduser ? 'max-md:hidden' : ''
-      }`}
+      className={`bg-[#8d90af17] h-full  px-[0px] rounded-2xl overflow-y-scroll text-amber-50 relative ${selecteduser ? 'max-md:hidden' : ''
+        }`}
     >
       <div className='topload sticky top-0 bg-[#645CA5] p-4 z-10 '>
         <div className='flex justify-between items-center px-2  '>
@@ -70,14 +69,13 @@ const Siderbar = () => {
         </div>
       </div>
 
-       {/* uses display */}
+      {/* uses display */}
       <div className='flex flex-col mt-2 '>
         {filtereduser.map((user, index) => (
           <div
             key={index}
-            className={`flex items-center gap-3 p-4 hover:bg-[#282142]/30 rounded-lg relative cursor-pointer ${
-              selecteduser?._id === user._id ? 'bg-[#282142]' : ''
-            } `}
+            className={`flex items-center gap-3 p-4 hover:bg-[#282142]/30 rounded-lg relative cursor-pointer ${selecteduser?._id === user._id ? 'bg-[#282142]' : ''
+              } `}
             onClick={() => {
               setSelecteduser(user);
               setUnseenmsg((prev) => {

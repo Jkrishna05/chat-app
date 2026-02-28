@@ -21,7 +21,7 @@ const App = () => {
         <Route path='/profile' element={authUser?<Profilepage />:<Navigate to='/login'/>} />
         <Route path='/login' element={!authUser?<Loginpage />:<Navigate to='/'/>} />
       </Routes>
-
+ 
     </div>
   )
 }

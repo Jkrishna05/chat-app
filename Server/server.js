@@ -18,10 +18,10 @@ const server = http.createServer(app); // HTTP server
 
 dbConnect();
 
-// trust proxy for correct req.ip when behind proxies (Heroku/Render)
+// trust proxy for correct req.ip when behind proxies
 app.set("trust proxy", 1);
 
-// ================= SOCKET.IO SETUP ==================
+//  SOCKET.IO SETUP 
 export const io = new Server(server, {
   cors: {
     origin: process.env.FRONTEND_URL || "http://localhost:5173",
@@ -50,7 +50,7 @@ io.on("connection", (socket) => {
   });
 });
 
-// ================== MIDDLEWARE ==================
+//  MIDDLEWARE 
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || "http://localhost:5173", // frontend URL
@@ -61,11 +61,11 @@ app.use(
 app.use(express.json({ limit: "40mb" }));
 app.use(cookieParser());
 
-// ================== ROUTES ==================
+//  ROUTES 
 app.use("/user", userRouter);
 app.use("/message", messageRouter);
 
-// ================== LOGOUT ROUTE ==================
+//  LOGOUT ROUTE 
 app.post("/user/logout", async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
   if (refreshToken) {
@@ -76,7 +76,7 @@ app.post("/user/logout", async (req, res) => {
   res.json({ success: true, message: "Logged out" });
 });
 
-// ================== REFRESH TOKEN ROUTE ==================
+//  REFRESH TOKEN ROUTE
 app.post("/refresh", async (req, res) => {
   const oldToken = req.cookies.refreshToken;
   if (!oldToken)
@@ -87,7 +87,7 @@ app.post("/refresh", async (req, res) => {
 
     // check if token exists in DB
     const dbToken = await Token.findOne({
-      userId: decoded._id,
+      userId: decoded.id,
       token: oldToken,
     });
     if (!dbToken) {
@@ -99,7 +99,7 @@ app.post("/refresh", async (req, res) => {
     // suspicious activity check
     if (dbToken.ip !== req.ip || dbToken.userAgent !== req.headers["user-agent"]) {
       // logout all sessions
-      await Token.deleteMany({ userId: decoded._id });
+      await Token.deleteMany({ userId: decoded.id });
       return res
         .status(401)
         .json({ message: "Suspicious login detected. Please login again." });
@@ -110,19 +110,19 @@ app.post("/refresh", async (req, res) => {
 
     // issue new tokens
     const newAccessToken = jwt.sign(
-      { _id: decoded._id },
+      { id: decoded.id },
       process.env.JWT_SECRET,
       { expiresIn: "15m" }
     );
     const newRefreshToken = jwt.sign(
-      { _id: decoded._id },
+      { id: decoded.id },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
     // save new refresh token with IP/device
     await Token.create({
-      userId: decoded._id,
+      userId: decoded.id,
       token: newRefreshToken,
       ip: req.ip,
       userAgent: req.headers["user-agent"],
@@ -151,11 +151,11 @@ app.post("/refresh", async (req, res) => {
   }
 });
 
-// ================== SERVER START ==================
-if(process.env.NODE_ENV !== "production"){
+
+// if(process.env.NODE_ENV === "production"){
   server.listen(process.env.PORT, () => {
     console.log(`server started at port ${process.env.PORT}`);
   });
-}
-// for vercel
+// }
+
 export default server;

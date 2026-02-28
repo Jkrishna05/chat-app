@@ -15,7 +15,7 @@ const Chatbox = ({help,setHelp}) => {
     selecteduser,
     getMessages,
     message,
-    sendmessage, // ✅ get sendmessage from context
+    sendmessage,
   } = useContext(ChatData);
 
   const scrollEnd = useRef();

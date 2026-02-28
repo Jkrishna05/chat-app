@@ -10,7 +10,7 @@ const Profilebar = ({help,setHelp}) => {
   const [mesgImage, setMsgImage] = useState([]);
 
   useEffect(() => {
-    // ✅ only run when message is available
+    //only run when message is available
     if (Array.isArray(message)) {
       const imgs = message.filter((msg) => msg.image).map((msg) => msg.image);
       setMsgImage(imgs);
@@ -19,7 +19,7 @@ const Profilebar = ({help,setHelp}) => {
     }
   }, [selecteduser, message]);
 
-  if (!selecteduser) return null; // ✅ nothing to show if no user selected
+  if (!selecteduser) return null; //nothing to show if no user selected
 
   return (
     <div className={`bg-[#8d90af17] h-full px-[20px] rounded-2xl overflow-y-scroll text-amber-50  flex-col items-center ${help===selecteduser._id?'sm:block':'hidden xl:flex'}`}>
