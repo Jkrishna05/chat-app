@@ -13,7 +13,7 @@ Users can create accounts, join chat rooms, and exchange messages instantly.
 
 ## 🔗 Live Demo  
 
-🌐 **[Live Demo](chat-app-silk-nu-92.vercel.app/login)** – try it online!  
+🌐 **[Live Demo](https://chat-app-silk-nu-92.vercel.app/login)** – try it online!  
 📂 **[GitHub Repo](https://github.com/Jkrishna05/ChatApp.git)**  
 
 ---
