@@ -13,7 +13,8 @@ const App = () => {
   let {authUser}=value;
 
   return (
-    <div className='bg-[url("./bgImage.svg")] bg-contain '>
+    <div className='bg-[url("/bgImage.svg")] bg-no-repeat bg-cover min-h-screen '>
+
       <Toaster />
       <Routes>
         <Route path='/' element={authUser?<Homepage />:<Navigate to='/login'/>} />
@@ -25,4 +26,4 @@ const App = () => {
   )
 }
 
-export default App
+export default App;
