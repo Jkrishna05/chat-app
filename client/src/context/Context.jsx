@@ -55,11 +55,14 @@ const Context = ({ children }) => {
   
   // CONNECT SOCKET (JWT Based)
  
-  const connectSocket = () => {
+  const connectSocket = (user) => {
     if (socket) socket.disconnect();
 
     const newSocket = io(backendUrl, {
-      withCredentials: true, // JWT cookie will authenticate
+      withCredentials: true,
+         query: {
+        userId: user?._id,
+      }, 
     });
 
     setSocket(newSocket);
@@ -78,7 +81,7 @@ const Context = ({ children }) => {
       if (res.data.success) {
         setAuthUser(res.data.user);
         if(authUser){
-           connectSocket();
+           connectSocket(res.data.user);
          }
         toast.success(res.data.message);
       } else {
