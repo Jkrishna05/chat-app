@@ -38,8 +38,10 @@ const Context = ({ children }) => {
     try {
       const { data } = await axios.get("/user/checkAuth");
       if (data.success) {
-        setAuthUser(data.user);
-        connectSocket();
+         setAuthUser(data.user);
+         if(authUser){
+           connectSocket();
+         }
       }
     } catch (error) {
       if (error.response?.status === 401) {
@@ -75,7 +77,9 @@ const Context = ({ children }) => {
 
       if (res.data.success) {
         setAuthUser(res.data.user);
-        connectSocket();
+        if(authUser){
+           connectSocket();
+         }
         toast.success(res.data.message);
       } else {
         toast.error(res.data.message);
