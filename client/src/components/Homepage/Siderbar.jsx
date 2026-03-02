@@ -5,6 +5,7 @@ import { ChatContext } from '../../context/Context';
 import { ChatData } from '../../context/Chatprovider';
 
 const Siderbar = () => {
+  const [open, setOpen] = useState(false);
   const { logout, onlineUsers } = useContext(ChatContext);
   const {
     setSelecteduser,
@@ -37,23 +38,38 @@ const Siderbar = () => {
       <div className='topload sticky top-0 bg-[#645CA5] p-4 z-10 '>
         <div className='flex justify-between items-center px-2  '>
           <img src={assets.zivo} alt='logo' className='max-w-50 ' />
+
           <div className='relative group py-4'>
-            <img src={assets.menu_icon} alt='menu' className='h-5 ' />
-            <div className='absolute top-full right-0 border px-[10px] py-[10px] rounded bg-[#282142] border-gray-600 text-white hidden group-hover:block z-2'>
-              <p
-                className='cursor-pointer text-xl'
-                onClick={() => {
-                  nav('/profile');
-                }}
-              >
-                Edit Profile
-              </p>
-              <hr className='my-2 border-t border-gray-500' />
-              <p className='cursor-pointer text-xl' onClick={logout}>
-                Log Out
-              </p>
-            </div>
+            <img src={assets.menu_icon} alt='menu' className="h-5 cursor-pointer"
+              onClick={() => setOpen(!open)} />
+            {open && (
+              <div className="absolute top-full right-0 border px-[10px] py-[10px] rounded bg-[#282142] border-gray-600 text-white z-20">
+                <p
+                  className="cursor-pointer text-xl"
+                  onClick={() => {
+                    nav("/profile");
+                    setOpen(false);
+                  }}
+                >
+                  Edit Profile
+                </p>
+
+                <hr className="my-2 border-t border-gray-500" />
+
+                <p
+                  className="cursor-pointer text-xl"
+                  onClick={() => {
+                    logout();
+                    setOpen(false);
+                  }}
+                >
+                  Log Out
+                </p>
+              </div>
+            )}
+
           </div>
+
         </div>
         <div className='bg-[#282142] rounded-full flex items-center gap-2 px-4 py-3 mt-1'>
           <img src={assets.search_icon} alt='search' className='w-3' />
