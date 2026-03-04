@@ -53,6 +53,32 @@ io.on("connection", (socket) => {
     }
     io.emit("getOnlineUsers", Object.keys(onlineUsers));
   });
+
+  // typing indicators: forward to specific user
+  socket.on('typing', ({ to }) => {
+    if (!to) return;
+    const toSocketId = onlineUsers[to];
+    if (toSocketId) {
+      io.to(toSocketId).emit('typing', { from: userId });
+    }
+  });
+
+  socket.on('stopTyping', ({ to }) => {
+    if (!to) return;
+    const toSocketId = onlineUsers[to];
+    if (toSocketId) {
+      io.to(toSocketId).emit('stopTyping', { from: userId });
+    }
+  });
+
+  // immediate message-read forwarding (client can emit when marking read)
+  socket.on('messageRead', ({ to, messageId }) => {
+    if (!to || !messageId) return;
+    const toSocketId = onlineUsers[to];
+    if (toSocketId) {
+      io.to(toSocketId).emit('messageSeen', { messageId, seenBy: userId });
+    }
+  });
 });
 
 //  MIDDLEWARE 

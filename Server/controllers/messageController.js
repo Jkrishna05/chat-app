@@ -42,10 +42,19 @@ let loadmessage = async (req, res) => {
       ]
     }).sort({ createdAt: 1 }); // keep messages in order
 
-    await messageModel.updateMany(
-      { senderId: selecteduserId, reciverId: myid, seen: false },
-      { seen: true }
-    );
+    // find unseen messages sent by selected user to me
+    const unseenMessages = await messageModel.find({ senderId: selecteduserId, reciverId: myid, seen: false });
+    if (unseenMessages.length > 0) {
+      const ids = unseenMessages.map(m => m._id);
+      await messageModel.updateMany({ _id: { $in: ids } }, { seen: true });
+      // notify each sender socket that their message was seen
+      const senderSocketId = onlineUsers[selecteduserId];
+      if (senderSocketId) {
+        ids.forEach(id => {
+          io.to(senderSocketId).emit('messageSeen', { messageId: id, seenBy: myid });
+        });
+      }
+    }
 
     res.json({ success: true, message });
   } catch (error) {
@@ -58,7 +67,15 @@ let loadmessage = async (req, res) => {
 let messageseen = async (req, res) => {
   try {
     let { id } = req.params;
-    await messageModel.findByIdAndUpdate(id, { seen: true });
+    const msg = await messageModel.findByIdAndUpdate(id, { seen: true }, { new: true });
+    // emit to sender that this message was seen
+    if (msg) {
+      const senderId = msg.senderId.toString();
+      const senderSocket = onlineUsers[senderId];
+      if (senderSocket) {
+        io.to(senderSocket).emit('messageSeen', { messageId: msg._id, seenBy: req.userId });
+      }
+    }
     res.json({ success: true });
   } catch (error) {
     console.log(error);

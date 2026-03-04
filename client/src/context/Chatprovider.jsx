@@ -10,6 +10,7 @@ const Chatprovider = ({ children }) => {
   const [selecteduser, setSelecteduser] = useState(null);
   const [unseenmsg, setUnseenmsg] = useState({});
   const [message, setMessage] = useState([]);
+  const [typingUsers, setTypingUsers] = useState({});
 
   const { socket } = useContext(ChatContext);
 
@@ -61,6 +62,13 @@ const Chatprovider = ({ children }) => {
         // message from current chat: mark seen and show in list
         newMessage.seen = true;
         setMessage((prevmsg) => [...prevmsg, newMessage]);
+        // emit immediate read event so sender UI updates instantly
+        try {
+          if (socket) socket.emit('messageRead', { to: newMessage.senderId, messageId: newMessage._id });
+        } catch (err) {
+          console.warn('socket emit messageRead failed', err);
+        }
+        // also inform server to persist seen flag
         axios.put(`/message/mark/${newMessage._id}`);
         // make sure any lingering unseen count is cleared
         setUnseenmsg((prevmsg) => ({ ...prevmsg, [newMessage.senderId]: 0 }));
@@ -75,10 +83,32 @@ const Chatprovider = ({ children }) => {
       }
     };
 
+    const handleMessageSeen = ({ messageId, seenBy }) => {
+      setMessage((prev) => prev.map(m => (m._id?.toString() === messageId?.toString() ? { ...m, seen: true } : m)));
+    };
+
+    const handleTyping = ({ from }) => {
+      setTypingUsers(prev => ({ ...prev, [from]: true }));
+    };
+
+    const handleStopTyping = ({ from }) => {
+      setTypingUsers(prev => {
+        const next = { ...prev };
+        delete next[from];
+        return next;
+      });
+    };
+
     socket.on('newMessage', handleNewMessage);
+    socket.on('messageSeen', handleMessageSeen);
+    socket.on('typing', handleTyping);
+    socket.on('stopTyping', handleStopTyping);
 
     return () => {
       socket.off('newMessage', handleNewMessage);
+      socket.off('messageSeen', handleMessageSeen);
+      socket.off('typing', handleTyping);
+      socket.off('stopTyping', handleStopTyping);
     };
   }, [socket, selecteduser]);
 
@@ -92,6 +122,7 @@ const Chatprovider = ({ children }) => {
     unseenmsg,
     setUnseenmsg,
     fetchUsers,
+    typingUsers,
   };
   return (
     <ChatData.Provider value={chatvalues}>
