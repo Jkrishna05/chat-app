@@ -58,10 +58,14 @@ const Chatprovider = ({ children }) => {
 
     const handleNewMessage = (newMessage) => {
       if (selecteduser && newMessage.senderId === selecteduser._id) {
+        // message from current chat: mark seen and show in list
         newMessage.seen = true;
         setMessage((prevmsg) => [...prevmsg, newMessage]);
         axios.put(`/message/mark/${newMessage._id}`);
+        // make sure any lingering unseen count is cleared
+        setUnseenmsg((prevmsg) => ({ ...prevmsg, [newMessage.senderId]: 0 }));
       } else {
+        // increment unseen for other users
         setUnseenmsg((prevmsg) => ({
           ...prevmsg,
           [newMessage.senderId]: prevmsg[newMessage.senderId]

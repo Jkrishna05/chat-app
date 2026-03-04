@@ -5,7 +5,7 @@ import { io } from "socket.io-client";
 
 export const ChatContext = createContext();
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
+const backendUrl = import.meta.env.VITE_BACKEND_URL || ""; // fallback to same origin if not defined
 
 // Axios global setup
 axios.defaults.baseURL = backendUrl;
@@ -39,9 +39,8 @@ const Context = ({ children }) => {
       const { data } = await axios.get("/user/checkAuth");
       if (data.success) {
          setAuthUser(data.user);
-         if(authUser){
-           connectSocket();
-         }
+         // connect right away using the fetched user (don't rely on stale state)
+         connectSocket(data.user);
       }
     } catch (error) {
       if (error.response?.status === 401) {
@@ -56,13 +55,37 @@ const Context = ({ children }) => {
   // CONNECT SOCKET (JWT Based)
  
   const connectSocket = (user) => {
-    if (socket) socket.disconnect();
+    if (!user) {
+      console.warn("connectSocket called without user");
+      return; // nothing to do if we don't have a user id
+    }
 
+    if (socket) {
+      console.debug("disconnecting previous socket");
+      socket.disconnect();
+    }
+
+    console.debug("attempting socket connection to", backendUrl, "for user", user._id);
     const newSocket = io(backendUrl, {
       withCredentials: true,
-         query: {
-        userId: user?._id,
-      }, 
+      // `auth` is supported by socket.io >=4 and is more reliable than query
+      auth: {
+        userId: user._id,
+      },
+      // keep query for backwards compatibility
+      query: {
+        userId: user._id,
+      },
+    });
+
+    newSocket.on("connect", () => {
+      console.log("socket connected with id", newSocket.id);
+    });
+    newSocket.on("connect_error", (err) => {
+      console.error("socket connect error:", err);
+    });
+    newSocket.on("disconnect", (reason) => {
+      console.log("socket disconnected:", reason);
     });
 
     setSocket(newSocket);
@@ -80,9 +103,8 @@ const Context = ({ children }) => {
 
       if (res.data.success) {
         setAuthUser(res.data.user);
-        if(authUser){
-           connectSocket(res.data.user);
-         }
+        // immediately establish socket with returned user object
+        connectSocket(res.data.user);
         toast.success(res.data.message);
       } else {
         toast.error(res.data.message);
@@ -184,6 +206,20 @@ const Context = ({ children }) => {
   useEffect(() => {
     checkAuthentication();
   }, []);
+
+  // whenever authUser becomes available we need to (re)connect the socket
+  useEffect(() => {
+    if (authUser) {
+      connectSocket(authUser);
+    } else {
+      // user logged out / not authenticated anymore
+      if (socket) {
+        socket.disconnect();
+        setSocket(null);
+      }
+      setOnlineUsers([]);
+    }
+  }, [authUser]);
 
   const value = {
     authUser,

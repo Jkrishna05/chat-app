@@ -33,19 +33,24 @@ export const io = new Server(server, {
 export let onlineUsers = {};
 
 io.on("connection", (socket) => {
-  const userId = socket.handshake.query.userId;
-  console.log("user connected", userId);
+  // support both query and auth payload for incoming user id
+  const userId = socket.handshake.auth?.userId || socket.handshake.query?.userId;
+  console.log("socket connection, id=", socket.id, "user=", userId);
 
   if (userId) {
     onlineUsers[userId] = socket.id;
+  } else {
+    console.warn("connection without userId");
   }
 
-  // emit online users to all connected clients
+  // emit online users list to everyone immediately
   io.emit("getOnlineUsers", Object.keys(onlineUsers));
 
   socket.on("disconnect", () => {
-    console.log("user disconnected", userId);
-    delete onlineUsers[userId];
+    console.log("socket disconnected", socket.id, "user=", userId);
+    if (userId && onlineUsers[userId] === socket.id) {
+      delete onlineUsers[userId];
+    }
     io.emit("getOnlineUsers", Object.keys(onlineUsers));
   });
 });
@@ -120,7 +125,7 @@ app.post("/refresh", async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    // save new refresh token with IP/device
+    
     await Token.create({
       userId: decoded.id,
       token: newRefreshToken,
@@ -128,7 +133,7 @@ app.post("/refresh", async (req, res) => {
       userAgent: req.headers["user-agent"],
     });
 
-    // set cookies
+  
     res.cookie("accessToken", newAccessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
