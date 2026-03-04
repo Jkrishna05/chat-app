@@ -68,11 +68,9 @@ const Context = ({ children }) => {
     console.debug("attempting socket connection to", backendUrl, "for user", user._id);
     const newSocket = io(backendUrl, {
       withCredentials: true,
-      // `auth` is supported by socket.io >=4 and is more reliable than query
       auth: {
         userId: user._id,
       },
-      // keep query for backwards compatibility
       query: {
         userId: user._id,
       },

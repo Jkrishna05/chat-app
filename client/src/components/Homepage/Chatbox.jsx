@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useContext } from 'react';
 import assets from '../../assets/chat-app-assets/chat-app-assets/assets';
-import { formatmessageTime } from '../../lib/utils';
+import { formatmessageTime, formatLastSeen } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import { ChatContext } from '../../context/Context';
 import { ChatData } from '../../context/Chatprovider';
@@ -16,8 +16,8 @@ const Chatbox = ({help,setHelp}) => {
     getMessages,
     message,
     sendmessage,
+    typingUsers,
   } = useContext(ChatData);
-  const { typingUsers } = useContext(ChatData);
   const { socket } = useContext(ChatContext);
 
   const scrollEnd = useRef();
@@ -50,7 +50,7 @@ const Chatbox = ({help,setHelp}) => {
     sendmessage({ text: input });
     setInput('');
     // notify stop typing after send
-    if (socket && selecteduser) socket.emit('stopTyping', { to: selecteduser._id });
+    if (socket && selecteduser) socket.emit('stopTyping', { to: String(selecteduser._id) });
     isTypingRef.current = false;
     clearTimeout(typingTimeout.current);
   };
@@ -73,16 +73,27 @@ const Chatbox = ({help,setHelp}) => {
   const handleInputChange = (e) => {
     const val = e.target.value;
     setInput(val);
-    if (!socket || !selecteduser) return;
+    if (!socket || !selecteduser) {
+      console.warn('[Chatbox] socket or selecteduser missing:', { socket: !!socket, selecteduser: !!selecteduser });
+      return;
+    }
 
+    const userId = String(selecteduser._id); // normalize to string
     if (!isTypingRef.current) {
-      socket.emit('typing', { to: selecteduser._id });
+      console.log('[Chatbox] socket.connected:', socket.connected, 'socket.id:', socket.id);
+      console.log('[Chatbox] emitting typing to:', userId);
+      socket.emit('typing', { to: userId }, (ack) => {
+        console.log('[Chatbox] typing event ack:', ack);
+      });
       isTypingRef.current = true;
     }
 
     clearTimeout(typingTimeout.current);
     typingTimeout.current = setTimeout(() => {
-      socket.emit('stopTyping', { to: selecteduser._id });
+      console.log('[Chatbox] emitting stopTyping to:', userId);
+      socket.emit('stopTyping', { to: userId }, (ack) => {
+        console.log('[Chatbox] stopTyping event ack:', ack);
+      });
       isTypingRef.current = false;
     }, 1000);
   };
@@ -98,6 +109,11 @@ const Chatbox = ({help,setHelp}) => {
       scrollEnd.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [message]);
+
+  // Monitor typingUsers state changes
+  // useEffect(() => {
+  //   console.log('[Chatbox] typingUsers changed:', typingUsers);
+  // }, [typingUsers]);
 
   return selecteduser ? (
     <div className={`relative overflow-scroll h-full backdrop-blur-lg ${help===selecteduser._id?'hidden':''}`}>
@@ -116,16 +132,20 @@ const Chatbox = ({help,setHelp}) => {
             alt=''
             className='rounded-full w-8'
           />
-          <div>
+          <div className='flex flex-col gap-2'>
             <p className='text-white flex gap-2 items-center'>
               {selecteduser.fullname}
-            </p>
-            {typingUsers && typingUsers[selecteduser._id] && (
-              <p className='text-sm text-gray-300'>typing...</p>
-            )}
-            {onlineUsers.includes(selecteduser._id) &&
-              <span className='h-2 w-2 bg-green-500 rounded-full'></span>
+            {onlineUsers.includes(String(selecteduser._id)) &&
+              <span className='h-2 w-2 bg-green-500 rounded-full inline-block'></span>
             }
+            </p>
+            {typingUsers && typingUsers[String(selecteduser._id)] ? (
+              <p className='text-sm text-gray-300'>typing...</p>
+            ) : (
+              <p className={`text-sm ${onlineUsers.includes(String(selecteduser._id)) ? 'text-green-300' : 'text-gray-300'}`}>
+                {onlineUsers.includes(String(selecteduser._id)) ? 'Online' : formatLastSeen(selecteduser.lastSeen)}
+              </p>
+            )}
           </div>
         </div>
         <img  onClick={()=>{setHelp(selecteduser._id); console.log(help)}} src={assets.help_icon} alt='' className='max-w-5 xl:hidden' />

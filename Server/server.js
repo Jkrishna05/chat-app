@@ -6,6 +6,7 @@ import { dbConnect } from "./config/db.js";
 import userRouter from "./Routes/userRoute.js";
 import messageRouter from "./Routes/messageRoutes.js";
 import { Server } from "socket.io";
+import userModel from "./models/userModel.js";
 import cookieParser from "cookie-parser";
 import Token from "./models/tokenModel.js";
 import jwt from "jsonwebtoken";
@@ -46,10 +47,15 @@ io.on("connection", (socket) => {
   // emit online users list to everyone immediately
   io.emit("getOnlineUsers", Object.keys(onlineUsers));
 
-  socket.on("disconnect", () => {
+  socket.on("disconnect", async () => {
     console.log("socket disconnected", socket.id, "user=", userId);
     if (userId && onlineUsers[userId] === socket.id) {
       delete onlineUsers[userId];
+      try {
+        await userModel.findByIdAndUpdate(userId, { lastSeen: new Date() });
+      } catch (err) {
+        console.warn('Failed to update lastSeen for', userId, err);
+      }
     }
     io.emit("getOnlineUsers", Object.keys(onlineUsers));
   });

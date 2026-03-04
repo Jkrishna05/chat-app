@@ -55,7 +55,12 @@ const Chatprovider = ({ children }) => {
   };
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket) {
+      console.warn('[Chatprovider] no socket available');
+      return;
+    }
+
+    console.log('[Chatprovider] socket connected, setting up listeners. Socket ID:', socket.id);
 
     const handleNewMessage = (newMessage) => {
       if (selecteduser && newMessage.senderId === selecteduser._id) {
@@ -64,7 +69,7 @@ const Chatprovider = ({ children }) => {
         setMessage((prevmsg) => [...prevmsg, newMessage]);
         // emit immediate read event so sender UI updates instantly
         try {
-          if (socket) socket.emit('messageRead', { to: newMessage.senderId, messageId: newMessage._id });
+          if (socket) socket.emit('messageRead', { to: String(newMessage.senderId), messageId: String(newMessage._id) });
         } catch (err) {
           console.warn('socket emit messageRead failed', err);
         }

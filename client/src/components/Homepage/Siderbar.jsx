@@ -14,6 +14,7 @@ const Siderbar = () => {
     fetchUsers,
     selecteduser,
     users,
+    typingUsers,
   } = useContext(ChatData);
 
   const nav = useNavigate();
@@ -109,7 +110,8 @@ const Siderbar = () => {
             <div className='flex flex-col gap-1'>
               <p>{user.fullname} </p>
               {Array.isArray(onlineUsers) && onlineUsers.includes(user._id) ? (
-                <span className='text-green-400 text-sm'>online</span>
+                typingUsers && selecteduser && typingUsers[String(selecteduser._id)]?( <p className='text-sm text-green-400'>typing...</p>)
+                :(<span className='text-green-400 text-sm'>online</span>)
               ) : (
                 <span className='text-neutral-400 text-sm'>offline</span>
               )}
