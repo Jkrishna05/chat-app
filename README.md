@@ -107,7 +107,7 @@ Users can customize their profiles:
 ---
 
 # 📂 Project Structure
-
+```
 root/
 │
 ├── client/ (React frontend)
@@ -124,12 +124,12 @@ root/
 │
 ├── .gitignore
 └── README.md
-
+```
 ---
 
 # 📸 Screenshots
 
-*(You can add screenshots here for better project presentation)*
+
 
 Example:
 
@@ -143,7 +143,6 @@ Example:
 # ⭐ Future Improvements
 
 * Voice messages
-* File sharing (PDF, documents, etc.)
 * Group chats
 * Video/voice calling using WebRTC
 * Message reactions (👍 ❤️ 😂)
