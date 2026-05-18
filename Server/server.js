@@ -2,15 +2,15 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import http from "http";
-import { dbConnect } from "./config/db.js";
-import userRouter from "./Routes/userRoute.js";
-import messageRouter from "./Routes/messageRoutes.js";
+import { dbConnect } from "./src/config/db.js";
+import userRouter from "./src/routes/userRoute.js";
+import messageRouter from "./src/routes/messageRoutes.js";
 import { Server } from "socket.io";
-import userModel from "./models/userModel.js";
+import userModel from "./src/models/userModel.js";
 import cookieParser from "cookie-parser";
-import Token from "./models/tokenModel.js";
+import Token from "./src/models/tokenModel.js";
 import jwt from "jsonwebtoken";
-
+import { setIo, onlineUsers } from "./src/socket.js";
 dotenv.config();
 console.log(process.env.CLOUDINARY_API_KEY);
 
@@ -23,15 +23,14 @@ dbConnect();
 app.set("trust proxy", 1);
 
 //  SOCKET.IO SETUP 
-export const io = new Server(server, {
+ const io = new Server(server, {
   cors: {
     origin: process.env.FRONTEND_URL || "http://localhost:5173",
     credentials: true,
   },
 });
 
-// store online users
-export let onlineUsers = {};
+setIo(io);
 
 io.on("connection", (socket) => {
   // support both query and auth payload for incoming user id

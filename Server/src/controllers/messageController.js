@@ -1,7 +1,8 @@
 import cloudinary from "../config/cloudnary.js";
 import messageModel from "../models/messageModel.js";
 import userModel from "../models/userModel.js";
-import { io, onlineUsers } from "../server.js";
+// import { io, onlineUsers } from "../../server.js";
+import { io, onlineUsers } from "../socket.js";
 
 // Get information for sidebar
 let getuserforsidebar = async (req, res) => {

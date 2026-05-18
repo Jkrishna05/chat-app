@@ -78,7 +78,7 @@ const Context = ({ children }) => {
 
     newSocket.on("connect", () => {
       console.log("socket connected with id", newSocket.id);
-    });
+     });
     newSocket.on("connect_error", (err) => {
       console.error("socket connect error:", err);
     });
