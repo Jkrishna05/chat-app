@@ -128,6 +128,7 @@ root/
 ---
 
 # 📸 Screenshots
+<img width="1775" height="868" alt="Screenshot 2026-05-18 165359" src="https://github.com/user-attachments/assets/ca8eaf37-4cd2-44a9-84ef-9d58245ca108" />
 
 
 
