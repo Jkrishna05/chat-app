@@ -1,6 +1,6 @@
 import express from 'express';
 import { getuserforsidebar, loadmessage, messageseen,sendmessage  } from '../controllers/messageController.js';
-import auth from '../MiddleWare/auth.js'
+import auth from '../middleware/auth.js'
 
 let messageRouter=express.Router();
 
